@@ -85,7 +85,97 @@ A Discord bot that monitors and displays your server's system metrics in real-ti
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/yourusername/server-monitor-bot.git
+   git clone https://github.com/instax-dutta/Linuxyy.git
+   cd server-monitor-bot
+   ```
+# Server Monitor Discord Bot
+
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![discord.py](https://img.shields.io/badge/discord-py-blue.svg)](https://github.com/Rapptz/discord.py)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
+[![Open Source Love](https://badges.frapsoft.com/os/v1/open-source.png?v=103)](https://github.com/ellerbrock/open-source-badges/)
+
+A Discord bot that monitors and displays your server's system metrics in real-time, including CPU usage, RAM usage, disk space, network activity, and more.
+
+## Table of Contents
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [Commands](#commands)
+- [Setup Instructions](#setup-instructions)
+  - [Prerequisites](#prerequisites)
+  - [Discord Bot Setup](#step-1-create-a-discord-bot)
+  - [Server Installation](#step-3-set-up-the-bot-on-your-server)
+- [Running as a Service](#running-as-a-service-linux)
+- [Project Structure](#project-structure)
+- [Configuration](#configuration)
+- [Customization](#customization)
+- [Troubleshooting](#troubleshooting)
+- [Security Notes](#security-notes)
+- [Contributing](#contributing)
+- [License](#license)
+
+## Features
+
+- Real-time monitoring of system resources through Discord embeds
+- Auto-updating statistics in a designated channel at configurable intervals
+- Individual commands to check specific metrics on demand
+- Clean, visual representation of data with progress bars
+- Cross-platform compatibility (Linux, Windows, macOS)
+- Separate tracking of server uptime (via neofetch) and bot uptime
+- Temperature monitoring when available
+- Network statistics including data sent/received
+
+## Screenshots
+
+![Bot Preview](https://i.postimg.cc/pr6rxcTm/Screenshot-2025-03-15-at-1-18-52-AM.png)
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `!stats` | Show all server statistics in one embed |
+| `!uptime` | Display both server and bot uptime |
+| `!cpu` | Show detailed CPU information including usage and frequency |
+| `!memory` | Show RAM and swap usage statistics with progress bars |
+| `!disk` | Show disk usage, capacity, and I/O statistics |
+| `!network` | Show network usage statistics (sent/received) |
+| `!help_monitor` | Display help information about available commands |
+
+## Setup Instructions
+
+### Prerequisites
+
+- Python 3.8 or higher
+- A Discord account and a registered bot
+- Permissions to add bots to your Discord server
+- neofetch installed (optional, for accurate server uptime)
+
+### Step 1: Create a Discord Bot
+
+1. Go to the [Discord Developer Portal](https://discord.com/developers/applications)
+2. Click "New Application" and give it a name
+3. Navigate to the "Bot" tab and click "Add Bot"
+4. Under the "Privileged Gateway Intents" section, enable "Message Content Intent"
+5. Copy your bot token (you'll need this later)
+
+### Step 2: Invite the Bot to Your Server
+
+1. In the Developer Portal, go to the "OAuth2" tab
+2. In the "URL Generator" section, select the "bot" scope
+3. Select the following permissions:
+   - Read Messages/View Channels
+   - Send Messages
+   - Embed Links
+   - Read Message History
+4. Copy the generated URL and open it in your browser
+5. Select your server and authorize the bot
+
+### Step 3: Set Up the Bot on Your Server
+
+1. Clone this repository:
+   ```bash
+   git clone https://github.com/instax-dutta/Linuxyy.git
    cd server-monitor-bot
    ```
 
