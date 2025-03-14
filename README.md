@@ -40,8 +40,6 @@ A Discord bot that monitors and displays your server's system metrics in real-ti
 
 ![Bot Preview](https://i.postimg.cc/pr6rxcTm/Screenshot-2025-03-15-at-1-18-52-AM.png)
 
-*Add screenshots of your bot in action here*
-
 ## Commands
 
 | Command | Description |
@@ -227,4 +225,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 Created with ❤️ by [Your Name]
 
-If you find this bot useful, please consider giving it a star on GitHub!
+If you find this bot useful, please consider giving it a star on [GitHub](https://github.com/instax-dutta/Linuxyy)!
