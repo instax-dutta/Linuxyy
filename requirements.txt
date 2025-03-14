@@ -1,0 +1,4 @@
+discord.py>=2.0.0
+psutil>=5.9.0
+python-dotenv>=0.20.0
+# No additional dependencies needed for subprocess and re modules (built into Python)
