@@ -8,7 +8,7 @@
 
 A Discord bot that monitors and displays your server's system metrics in real-time, including CPU usage, RAM usage, disk space, network activity, and more.
 
-![Bot Preview](https://i.imgur.com/YourImageHere.png)
+![Bot Preview](https://i.postimg.cc/pr6rxcTm/Screenshot-2025-03-15-at-1-18-52-AM.png)
 
 ## Table of Contents
 - [Features](#features)
