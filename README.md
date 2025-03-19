@@ -313,6 +313,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-Created with ❤️ by [Your Name]
+Created with ❤️ by [Sai Dutta Abhishek Dash]
 
 If you find this bot useful, please consider giving it a star on [GitHub](https://github.com/instax-dutta/Linuxyy)!
