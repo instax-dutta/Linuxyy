@@ -68,7 +68,8 @@ def get_server_uptime():
             return uptime_match.group(1).strip()
 
         return "Unknown (neofetch available but format not recognized)"
-    except (subprocess.SubprocessError, FileNotFoundError):
+    except (subprocess.SubprocessError, FileNotFoundError) as e:
+        print(f"Error running neofetch: {e}")
         # Fallback method if neofetch isn't available
         try:
             if platform.system() == "Linux":
@@ -80,8 +81,8 @@ def get_server_uptime():
                 uptime_match = re.search(r'up (.+?),', result.stdout)
                 if uptime_match:
                     return uptime_match.group(1).strip()
-        except:
-            pass
+        except Exception as e:
+            print(f"Error getting uptime: {e}")
 
         # If all else fails, return a message
         return "Unknown (neofetch not available)"
@@ -98,15 +99,16 @@ async def on_ready():
 async def update_stats():
     """Background task to update server stats periodically"""
     if MONITOR_CHANNEL_ID == 0:
+        print("Error: MONITOR_CHANNEL_ID is not set.")
         return
-    
+
     channel = bot.get_channel(MONITOR_CHANNEL_ID)
     if not channel:
         print(f"Error: Could not find channel with ID {MONITOR_CHANNEL_ID}")
         return
-    
+
     embed = create_stats_embed()
-    
+
     global monitor_message_id
     if monitor_message_id:
         try:
@@ -117,10 +119,23 @@ async def update_stats():
             # If message was deleted, send a new one
             message = await channel.send(embed=embed)
             monitor_message_id = message.id
+        except discord.Forbidden:
+            print(f"Error: Missing permissions to edit message in channel {MONITOR_CHANNEL_ID}")
+            return
+        except discord.HTTPException as e:
+            print(f"Error editing message: {e}")
+            return
     else:
-        # Send initial message
-        message = await channel.send(embed=embed)
-        monitor_message_id = message.id
+        try:
+            # Send initial message
+            message = await channel.send(embed=embed)
+            monitor_message_id = message.id
+        except discord.Forbidden:
+            print(f"Error: Missing permissions to send message in channel {MONITOR_CHANNEL_ID}")
+            return
+        except discord.HTTPException as e:
+            print(f"Error sending message: {e}")
+            return
 
 @update_stats.before_loop
 async def before_update_stats():
@@ -131,8 +146,11 @@ def create_stats_embed():
     """Create a Discord embed with server stats"""
     # Get system information
     cpu_usage = psutil.cpu_percent(interval=1)
+    cpu_freq = psutil.cpu_freq()
     memory = psutil.virtual_memory()
     disk = psutil.disk_usage('/')
+    disk_io = psutil.disk_io_counters()
+    net_io = psutil.net_io_counters()
 
     # Get server uptime from neofetch
     server_uptime = get_server_uptime()
@@ -145,7 +163,7 @@ def create_stats_embed():
     embed = discord.Embed(
         title="🖥️ Server Monitor",
         description=f"Stats for **{platform.node()}**",
-        color=0x00ff00,
+        color=0x1E90FF,  # DodgerBlue
         timestamp=datetime.datetime.now()
     )
 
@@ -153,34 +171,48 @@ def create_stats_embed():
     embed.add_field(name="🔄 System", value=f"{platform.system()} {platform.release()}", inline=True)
     embed.add_field(name="⏱️ Server Uptime", value=server_uptime, inline=True)
     embed.add_field(name="🤖 Bot Uptime", value=bot_uptime, inline=True)
+
+    # Add CPU usage with frequency
     embed.add_field(name="🧠 CPU Usage", value=f"{cpu_usage}%", inline=True)
-    
+    if cpu_freq:
+        embed.add_field(
+            name="CPU Frequency",
+            value=f"Current: {cpu_freq.current:.2f} MHz\nMax: {cpu_freq.max:.2f} MHz",
+            inline=True
+        )
+
     # Add memory usage with progress bar
     mem_percent = memory.percent
     mem_bar = create_progress_bar(mem_percent)
     embed.add_field(
-        name="💾 Memory Usage", 
-        value=f"{mem_bar} {mem_percent}%\n{memory.used // (1024**2)} MB / {memory.total // (1024**2)} MB", 
+        name="💾 Memory Usage",
+        value=f"{mem_bar} {mem_percent}%\n{memory.used // (1024**2)} MB / {memory.total // (1024**2)} MB",
         inline=False
     )
-    
+
     # Add disk usage with progress bar
     disk_percent = disk.percent
     disk_bar = create_progress_bar(disk_percent)
     embed.add_field(
-        name="💿 Disk Usage", 
-        value=f"{disk_bar} {disk_percent}%\n{disk.used // (1024**3)} GB / {disk.total // (1024**3)} GB", 
+        name="💿 Disk Usage",
+        value=f"{disk_bar} {disk_percent}%\n{disk.used // (1024**3)} GB / {disk.total // (1024**3)} GB",
         inline=False
     )
-    
+
+    # Add disk I/O stats
+    embed.add_field(
+        name="Disk I/O",
+        value=f"Read: {disk_io.read_bytes // (1024**2)} MB\nWritten: {disk_io.write_bytes // (1024**2)} MB",
+        inline=True
+    )
+
     # Add network info
-    net_io = psutil.net_io_counters()
     embed.add_field(
         name="🌐 Network",
         value=f"Sent: {net_io.bytes_sent // (1024**2)} MB\nReceived: {net_io.bytes_recv // (1024**2)} MB",
         inline=True
     )
-    
+
     # Add temperatures if available
     try:
         temps = psutil.sensors_temperatures()
@@ -193,7 +225,7 @@ def create_stats_embed():
                 embed.add_field(name="🌡️ Temperatures", value=temp_text.strip(), inline=True)
     except:
         pass  # Temperatures might not be available on all systems
-    
+
     embed.set_footer(text=f"Last updated • Auto-updates every {UPDATE_INTERVAL} seconds")
     return embed
 
@@ -207,6 +239,7 @@ def create_progress_bar(percent, length=10):
 async def stats(ctx):
     """Command to show current server stats"""
     embed = create_stats_embed()
+    embed.color = 0x32CD32  # LimeGreen
     await ctx.send(embed=embed)
 
 @bot.command(name='uptime')
@@ -221,11 +254,11 @@ async def uptime(ctx):
 
     embed = discord.Embed(
         title="⏱️ Uptime Information",
-        color=0xffaa00,
+        color=0xFFA500,  # Orange
         timestamp=datetime.datetime.now()
     )
 
-    embed.add_field(name="�️ Server Uptime", value=server_uptime, inline=False)
+    embed.add_field(name="️ Server Uptime", value=server_uptime, inline=False)
     embed.add_field(name="🤖 Bot Uptime", value=bot_uptime, inline=False)
 
     await ctx.send(embed=embed)
@@ -236,23 +269,30 @@ async def cpu(ctx):
     cpu_usage = psutil.cpu_percent(interval=1)
     cpu_count = psutil.cpu_count()
     cpu_freq = psutil.cpu_freq()
-    
+    cpu_times = psutil.cpu_times()
+
     embed = discord.Embed(
         title="🧠 CPU Information",
-        color=0x00aaff,
+        color=0x1E90FF,  # DodgerBlue
         timestamp=datetime.datetime.now()
     )
-    
+
     embed.add_field(name="Usage", value=f"{cpu_usage}%", inline=True)
     embed.add_field(name="Cores", value=f"{cpu_count}", inline=True)
-    
+
     if cpu_freq:
         embed.add_field(
-            name="Frequency", 
-            value=f"Current: {cpu_freq.current:.2f} MHz\nMax: {cpu_freq.max:.2f} MHz", 
+            name="Frequency",
+            value=f"Current: {cpu_freq.current:.2f} MHz\nMax: {cpu_freq.max:.2f} MHz",
             inline=True
         )
-    
+
+    embed.add_field(
+        name="Time Spent",
+        value=f"User: {cpu_times.user:.2f}s\nSystem: {cpu_times.system:.2f}s\nIdle: {cpu_times.idle:.2f}s",
+        inline=False
+    )
+
     await ctx.send(embed=embed)
 
 @bot.command(name='memory', aliases=['ram'])
@@ -260,83 +300,98 @@ async def memory(ctx):
     """Command to show memory usage"""
     memory = psutil.virtual_memory()
     swap = psutil.swap_memory()
-    
+
     embed = discord.Embed(
         title="💾 Memory Information",
-        color=0xff00aa,
+        color=0xFF69B4,  # HotPink
         timestamp=datetime.datetime.now()
     )
-    
+
     mem_bar = create_progress_bar(memory.percent)
     embed.add_field(
-        name="RAM Usage", 
-        value=f"{mem_bar} {memory.percent}%\n{memory.used // (1024**2)} MB / {memory.total // (1024**2)} MB", 
+        name="RAM Usage",
+        value=f"{mem_bar} {memory.percent}%\n{memory.used // (1024**2)} MB / {memory.total // (1024**2)} MB",
         inline=False
     )
-    
+
     swap_bar = create_progress_bar(swap.percent)
     embed.add_field(
-        name="Swap Usage", 
-        value=f"{swap_bar} {swap.percent}%\n{swap.used // (1024**2)} MB / {swap.total // (1024**2)} MB", 
+        name="Swap Usage",
+        value=f"{swap_bar} {swap.percent}%\n{swap.used // (1024**2)} MB / {swap.total // (1024**2)} MB",
         inline=False
     )
-    
+
+    embed.add_field(
+        name="Memory Details",
+        value=f"Available: {memory.available // (1024**2)} MB\nCached: {memory.cached // (1024**2)} MB\nBuffers: {memory.buffers // (1024**2)} MB",
+        inline=False
+    )
+
     await ctx.send(embed=embed)
 
 @bot.command(name='disk')
 async def disk(ctx):
     """Command to show disk usage"""
     disk = psutil.disk_usage('/')
-    
+    disk_io = psutil.disk_io_counters()
+
     embed = discord.Embed(
         title="💿 Disk Information",
-        color=0xaaff00,
+        color=0xFFD700,  # Gold
         timestamp=datetime.datetime.now()
     )
-    
+
     disk_bar = create_progress_bar(disk.percent)
     embed.add_field(
-        name="Disk Usage", 
-        value=f"{disk_bar} {disk.percent}%\n{disk.used // (1024**3)} GB / {disk.total // (1024**3)} GB", 
+        name="Disk Usage",
+        value=f"{disk_bar} {disk.percent}%\n{disk.used // (1024**3)} GB / {disk.total // (1024**3)} GB",
         inline=False
     )
-    
-    # Add disk IO stats
-    try:
-        disk_io = psutil.disk_io_counters()
-        embed.add_field(
-            name="Disk I/O",
-            value=f"Read: {disk_io.read_bytes // (1024**2)} MB\nWritten: {disk_io.write_bytes // (1024**2)} MB",
-            inline=True
-        )
-    except:
-        pass  # Disk IO might not be available on all systems
-    
+
+    embed.add_field(
+        name="Disk I/O",
+        value=f"Read: {disk_io.read_bytes // (1024**2)} MB\nWritten: {disk_io.write_bytes // (1024**2)} MB",
+        inline=True
+    )
+
+    embed.add_field(
+        name="Disk Details",
+        value=f"Free: {disk.free // (1024**3)} GB\nUsed: {disk.used // (1024**3)} GB\nTotal: {disk.total // (1024**3)} GB",
+        inline=False
+    )
+
     await ctx.send(embed=embed)
 
 @bot.command(name='network', aliases=['net'])
 async def network(ctx):
     """Command to show network usage"""
     net_io = psutil.net_io_counters()
-    
+    net_connections = psutil.net_connections()
+
     embed = discord.Embed(
         title="🌐 Network Information",
-        color=0x00ffaa,
+        color=0x8A2BE2,  # BlueViolet
         timestamp=datetime.datetime.now()
     )
-    
+
     embed.add_field(
         name="Data Transferred",
         value=f"Sent: {net_io.bytes_sent // (1024**2)} MB\nReceived: {net_io.bytes_recv // (1024**2)} MB",
         inline=True
     )
-    
+
     embed.add_field(
         name="Packets",
         value=f"Sent: {net_io.packets_sent}\nReceived: {net_io.packets_recv}",
         inline=True
     )
-    
+
+    embed.add_field(
+        name="Network Connections",
+        value=f"Total: {len(net_connections)}\nEstablished: {len([conn for conn in net_connections if conn.status == 'ESTABLISHED'])}",
+        inline=False
+    )
+
     await ctx.send(embed=embed)
 
 @bot.command(name='help_monitor')
